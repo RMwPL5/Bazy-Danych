@@ -1,0 +1,72 @@
+DROP TABLE pracownik;
+CREATE TABLE pracownik(
+id_pracownika INT auto_increment PRIMARY KEY,
+imie VARCHAR (40) NOT NULL,
+nazwisko VARCHAR (60) NOT NULL,
+data_urodzenia DATE NOT NULL);
+
+INSERT INTO pracownik(imie, nazwisko, data_urodzenia)
+VALUES
+("Patryk","Szymborski","1984-06-15"),
+("Julia","Stańczyk","1989-09-27"),
+("Igor","Tukański","1990-03-07");
+
+UPDATE pracownik
+SET data_urodzenia = "1986-06-15"
+WHERE data_urodzenia = 1;
+
+SELECT * FROM pracownik;
+
+CREATE TABLE zadanie(
+id_zadania SERIAL auto_increment PRIMARY KEY,
+nazwa_zadania VARCHAR (150) NOT NULL,
+priorytet VARCHAR (10) CHECK (priorytet IN ("normalny","wysoki","niski")),
+opis TEXT,
+pracownik INT,
+CONSTRAINT fk_pracownik FOREIGN KEY (pracownik)
+REFERENCES pracownik(id_pracownika)
+ON DELETE SET NULL);
+
+ALTER TABLE zadanie
+ALTER COLUMN priorytet SET DEFAULT "normalny";
+
+INSERT INTO zadanie (nazwa_zadania, opis, pracownik)
+SELECT
+"Zadanie wdrożeniowe" AS nazwa_zadania,
+"Opis zadania przypisanego automatycznie podczas inicjalizacji bazy danych." AS opis,
+id_pracownika AS pracownik
+FROM pracownik;
+
+SELECT * FROM zadanie;
+
+CREATE TABLE projekt(
+id_projektu INT auto_increment PRIMARY KEY,
+nazwa_projektu VARCHAR (150),
+data_rozpoczecia DATE NOT NULL,
+data_zakonczenia DATE NULL);
+
+ALTER TABLE projekt
+ADD COLUMN menedzer_projektu INT,
+ADD CONSTRAINT fk_menadzer_projektu
+FOREIGN KEY (menedzer_projektu) REFERENCES pracownik(id_pracownika);
+
+INSERT INTO projekt (nazwa_projektu, data_rozpoczecia, data_zakonczenia, menedzer_projektu)
+VALUES
+("Budżet Obywatelski", "2026-03-13", NULL, 1),
+("Cyfryzacja zbiorów", "2026-04-02", "2026-05-30", 2);
+
+ALTER TABLE zadanie
+ADD COLUMN projekt INT,
+ADD CONSTRAINT fk_zadanie_projekt
+FOREIGN KEY (projekt) REFERENCES projekt(id_projektu)
+ON DELETE CASCADE;
+
+UPDATE zadanie
+SET projekt = 1
+WHERE id_zadania IN (10,11,12);
+
+UPDATE zadanie
+SET projekt = 2
+WHERE id_zadania IN (13,14);
+
+SELECT * FROM projekt;
