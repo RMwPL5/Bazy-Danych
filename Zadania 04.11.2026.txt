@@ -1,0 +1,145 @@
+CREATE TABLE pracownik(
+id_pracownika INT auto_increment PRIMARY KEY,
+imie VARCHAR (40) NOT NULL,
+nazwisko VARCHAR (60) NOT NULL,
+data_urodzenia DATE NOT NULL);
+
+INSERT INTO pracownik(imie, nazwisko, data_urodzenia)
+VALUES
+("Patryk","Szymborski","1984-06-15"),
+("Julia","Stańczyk","1989-09-27"),
+("Igor","Tukański","1990-03-07");
+
+UPDATE pracownik
+SET data_urodzenia = "1986-06-15"
+WHERE id_pracownika = 1;
+
+CREATE TABLE zadanie(
+id_zadania SERIAL auto_increment PRIMARY KEY,
+nazwa_zadania VARCHAR (150) NOT NULL,
+priorytet ENUM("normalny","wysoki","niski"),
+opis TEXT,
+pracownik INT NULL,
+CONSTRAINT fk_pracownik FOREIGN KEY (pracownik)
+REFERENCES pracownik(id_pracownika)
+ON DELETE SET NULL);
+
+ALTER TABLE zadanie
+ALTER COLUMN priorytet SET DEFAULT "normalny";
+
+INSERT INTO zadanie (nazwa_zadania, priorytet, opis, pracownik) VALUES
+('Przygotowanie raportu', 'wysoki', 'Raport kwartalny dla zarządu', 1),
+('Analiza danych', 'normalny', NULL, 2),
+('Aktualizacja danych', 'Niski', 'Wymagana aktualizacja bibliotek', 3);
+
+CREATE TABLE projekt(
+id_projektu INT auto_increment PRIMARY KEY,
+nazwa_projektu VARCHAR (150),
+data_rozpoczecia DATE NOT NULL,
+data_zakonczenia DATE NULL);
+
+ALTER TABLE projekt
+ADD COLUMN menedzer_projektu INT,
+ADD FOREIGN KEY (menedzer_projektu) REFERENCES pracownik(id_pracownika);
+
+INSERT INTO projekt (nazwa_projektu, data_rozpoczecia, data_zakonczenia, menedzer_projektu) VALUES
+("Budżet Obywatelski", "2026-03-13", NULL, 1),
+("Cyfryzacja zbiorów", "2026-04-02", "2026-05-30", 2);
+
+ALTER TABLE zadanie
+ADD COLUMN projekt INT,
+ADD FOREIGN KEY (projekt) REFERENCES projekt(id_projektu) ON DELETE CASCADE;
+
+UPDATE zadanie
+SET projekt = 1
+WHERE id_zadania = 1;
+
+UPDATE zadanie
+SET projekt = 1
+WHERE id_zadania = 2;
+
+UPDATE zadanie
+SET projekt = 2
+WHERE id_zadania = 3;
+
+CREATE TABLE sprint(
+id_sprintu INT auto_increment PRIMARY KEY,
+numer_sprintu INT UNSIGNED,
+data_rozpoczecia DATE NOT NULL,
+data_zakonczenia DATE NOT NULL);
+
+ALTER TABLE zadanie
+ADD COLUMN sprint INT NULL,
+ADD FOREIGN KEY (sprint) REFERENCES sprint(id_sprintu) ON DELETE SET NULL;
+
+INSERT INTO sprint (numer_sprintu, data_rozpoczecia, data_zakonczenia)
+VALUES (1, '2026-05-12', '2026-05-31');
+
+UPDATE zadanie
+SET sprint = 1 
+WHERE id_zadania IN (1, 2);
+
+DROP TABLE status;
+CREATE TABLE status(
+id_statusu INT auto_increment PRIMARY KEY,
+nazwa_statusu VARCHAR(20) NOT NULL);
+
+INSERT INTO status (nazwa_statusu) VALUES
+('Nowe'),
+('W toku'),
+('Zakończone');
+
+CREATE TABLE zadanie_has_status(
+id_zdarzenia INT auto_increment PRIMARY KEY,
+id_zadania INT NOT NULL,
+id_statusu INT NOT NULL,
+data_zdarzenia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (id_zadania) REFERENCES zadanie(id_zadania) ON DELETE CASCADE,
+FOREIGN KEY (id_statusu) REFERENCES status(id_statusu));
+
+INSERT INTO zadanie_has_status (id_zadania, id_statusu) VALUES
+(1, 1),
+(2, 2),
+(3, 3);
+
+DELETE FROM projekt WHERE id_projektu = 5;
+
+SELECT * FROM zadanie WHERE id_projektu = 5;
+
+ALTER TABLE zadanie DROP FOREIGN KEY fk_zadanie_sprint;
+DROP TABLE sprint;
+
+ALTER TABLE zadanie DROP CONSTRAINT fk_zadanie_pracownik;
+
+ALTER TABLE projekt DROP CONSTRAINT fk_projekt_menadzer;
+
+ALTER TABLE pracownik DROP CONSTRAINT pk_pracownik;
+
+ALTER TABLE pracownik ADD CONSTRAINT pk_pracownik PRIMARY KEY (id_pracownika);
+
+ALTER TABLE zadanie
+ADD CONSTRAINT fk_zadanie_pracownik
+FOREIGN KEY (pracownik) REFERENCES pracownik(id_pracownika)
+ON DELETE SET NULL;
+
+ALTER TABLE projekt
+ADD CONSTRAINT fk_projekt_menadzer
+FOREIGN KEY (menadzer_projektu) REFERENCES pracownik(id_pracownika);
+
+ALTER TABLE zadanie
+ADD COLUMN godziny_szacowane INTEGER DEFAULT 8;
+
+UPDATE zadanie SET godziny_szacowane = 4 WHERE id = 1;
+UPDATE zadanie SET godziny_szacowane = 12 WHERE id = 2;
+UPDATE zadanie SET godziny_szacowane = 16 WHERE id = 3;
+
+UPDATE zadanie
+SET godziny_szacowane = CASE id
+WHEN 1 THEN 4
+WHEN 2 THEN 12
+WHEN 3 THEN 16
+ELSE godziny_szacowane
+END;
+
+ALTER TABLE zadanie
+ALTER COLUMN godziny_szacowane SET DEFAULT 6;
